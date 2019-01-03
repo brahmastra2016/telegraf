@@ -26,6 +26,7 @@ type JSONParser struct {
 	TagKeys        []string
 	StringFields   []string
 	JSONNameKey    string
+    JSONVES        string
 	JSONQuery      string
 	JSONTimeKey    string
 	JSONTimeFormat string
@@ -205,16 +206,53 @@ func (p *JSONParser) switchFieldToTag(tags map[string]string, fields map[string]
 		if sField {
 			continue
 		}
+        switch fields[k].(type) {
+        case string:
+		if p.JSONVES == "" {
+            delete(fields, k)
+        }
+        case bool:
+        if p.JSONVES == "" {
+            delete(fields, k)
+        }
+        } 
 
-		switch fields[k].(type) {
-		case string:
-			delete(fields, k)
-		case bool:
-			delete(fields, k)
-		}
 	}
+
+    //checks if json_ves_encoding is set
+    if p.JSONVES != "" {
+		fmt.Println("--------------------------------------")
+        fmt.Println("       VES                    VES      ")
+        fmt.Println("--------------------------------------")
+
+ // Accepting string types and parsing for VES to influx output
+        for name, value := range fields {
+        if strings.Contains(name,"name") {
+            var temp = fields[name]
+            re := regexp.MustCompile("event_otherFields_hashOfNameValuePairArrays_([0-9]+)_name")
+            if len(re.FindStringSubmatch(name)) != 0{
+                fields["@name"] = value
+                fmt.Println(value )
+            }
+            delete(fields,name)
+            for name1, value1 := range fields {
+                var tmp = strings.TrimRight(name,"name")+"value"
+                if strings.Contains(name1,tmp){
+                        //Added to check if string is numeric or alphanumeric. Return int if numeric
+                        if s, err := strconv.Atoi(value1.(string)); err == nil {
+                            fields[temp.(string)]=s
+                        }   else {
+                                fields[temp.(string)] = value1
+                        }
+                        delete(fields,name1)
+                    }
+                }
+    }
+  }             
+    }
 	return tags, fields
 }
+
 
 func (p *JSONParser) Parse(buf []byte) ([]telegraf.Metric, error) {
 	if p.JSONQuery != "" {

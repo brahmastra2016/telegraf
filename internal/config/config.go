@@ -1333,6 +1333,16 @@ func getParserConfig(name string, tbl *ast.Table) (*parsers.Config, error) {
 		}
 	}
 
+
+    if node, ok := tbl.Fields["json_ves"]; ok {
+        if kv, ok := node.(*ast.KeyValue); ok {
+            if str, ok := kv.Value.(*ast.String); ok {
+                c.JSONVES = str.Value
+            }
+        }
+    } 
+
+
 	if node, ok := tbl.Fields["json_query"]; ok {
 		if kv, ok := node.(*ast.KeyValue); ok {
 			if str, ok := kv.Value.(*ast.String); ok {
@@ -1628,6 +1638,7 @@ func getParserConfig(name string, tbl *ast.Table) (*parsers.Config, error) {
 	delete(tbl.Fields, "templates")
 	delete(tbl.Fields, "tag_keys")
 	delete(tbl.Fields, "json_name_key")
+    delete(tbl.Fields, "json_ves")
 	delete(tbl.Fields, "json_query")
 	delete(tbl.Fields, "json_string_fields")
 	delete(tbl.Fields, "json_time_format")
